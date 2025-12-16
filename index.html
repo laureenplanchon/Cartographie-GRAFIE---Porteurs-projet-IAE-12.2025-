@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cartographie mécénat — Projets SIAE IDF (GRAFIE)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --muted2: rgba(255,255,255,0.55);
+      --border: rgba(255,255,255,0.12);
+      --accent: #f7d154;
+      --accent2: #90cdf4;
+      --shadow: 0 20px 70px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 12% 10%, rgba(247,209,84,0.12), transparent 55%),
+                  radial-gradient(1000px 700px at 88% 22%, rgba(144,205,244,0.10), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 28px 18px 48px; }
+    .hero {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      padding: 22px 22px 18px;
+      box-shadow: var(--shadow);
+    }
+    .kicker {
+      display: inline-flex; gap: 10px; align-items: center;
+      font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 999px; background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(247,209,84,0.12);
+    }
+    h1 { margin: 10px 0 6px; font-size: clamp(22px, 3vw, 34px); line-height: 1.15; }
+    .sub { margin: 0; color: var(--muted); max-width: 92ch; line-height: 1.5; }
+
+    .controls {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 10px;
+    }
+    .ctrl {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      pointer-events: auto;
+      position: relative;
+      z-index: 6;
+    }
+    .btn {
+      border: 1px solid rgba(247,209,84,0.35);
+      background: rgba(247,209,84,0.14);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      width: fit-content;
+    }
+    .btn:hover { background: rgba(247,209,84,0.18); }
+
+    .chiprow { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .chipbox {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.035);
+      padding: 12px;
+    }
+    .chipbox h3 { margin: 0 0 10px; font-size: 14px; color: rgba(255,255,255,0.88); letter-spacing: .02em; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .12s ease, border-color .12s ease, transform .12s ease;
+    }
+    .chip:hover { transform: translateY(-1px); }
+    .chip.active {
+      border-color: rgba(144,205,244,0.55);
+      background: rgba(144,205,244,0.14);
+      color: rgba(255,255,255,0.92);
+    }
+
+    .bar {
+      display:flex; justify-content: space-between; align-items:center;
+      margin: 18px 2px 10px;
+      color: var(--muted2);
+      font-size: 13px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 10px; }
+    @media (max-width: 980px) {
+      .controls { grid-template-columns: 1fr; }
+      .chiprow { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      display: flex; flex-direction: column; justify-content: space-between;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      border-radius: var(--radius);
+      padding: 14px 14px 12px;
+      min-height: 180px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.18);
+    }
+    .badge {
+      display: inline-flex; align-items: center;
+      font-size: 12px;
+      color: rgba(0,0,0,0.85);
+      background: var(--accent);
+      padding: 6px 10px;
+      border-radius: 999px;
+      width: fit-content;
+      margin-bottom: 10px;
+    }
+    .title { font-size: 16px; font-weight: 750; letter-spacing: .01em; margin-bottom: 4px; }
+    .meta { font-size: 13px; color: var(--muted); line-height: 1.35; }
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top: 10px; }
+    .tag {
+      font-size: 11px;
+      color: rgba(255,255,255,0.84);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.03);
+    }
+    .tag.soft {
+      border-color: rgba(247,209,84,0.22);
+      background: rgba(247,209,84,0.09);
+      color: rgba(255,255,255,0.85);
+    }
+    .bottom {
+      display:flex; justify-content: space-between; align-items:center;
+      margin-top: 14px; gap: 10px;
+    }
+    .link {
+      font-size: 13px;
+      color: rgba(144,205,244,0.95);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(144,205,244,0.35);
+      padding-bottom: 2px;
+      white-space: nowrap;
+    }
+    .link:hover { border-bottom-color: rgba(144,205,244,0.75); }
+    .hint { font-size: 12px; color: var(--muted2); text-align:right; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="kicker"><span class="dot"></span>GRAFIE • Cartographie mécénat • Île-de-France</div>
+      <h1>Cartographie cliquable des projets finançables</h1>
+      <p class="sub">
+        Filtrez par <strong>département</strong> (sélection multiple), <strong>catégorie de projet</strong>, <strong>public</strong> et <strong>montant</strong>.
+      </p>
+
+      <div class="controls">
+        <input id="q" class="ctrl" type="search" placeholder="Rechercher une structure (ex : Rejoué, La Main Fine…)" />
+        <select id="funding" class="ctrl">
+          <option value="">Montant (tous) — cliquez pour dérouler</option>
+          <option value="30–100 k€">30–100 k€</option>
+<option value="&gt;100 k€">&gt;100 k€</option>
+<option value="—">—</option>
+        </select>
+      </div>
+
+      <div class="chiprow">
+        <div class="chipbox">
+          <h3>Départements (sélection multiple)</h3>
+          <div class="chips" id="depts"><button class="chip" data-kind="dept" data-value="75">75</button>
+<button class="chip" data-kind="dept" data-value="77">77</button>
+<button class="chip" data-kind="dept" data-value="91">91</button>
+<button class="chip" data-kind="dept" data-value="92">92</button>
+<button class="chip" data-kind="dept" data-value="93">93</button>
+<button class="chip" data-kind="dept" data-value="94">94</button>
+<button class="chip" data-kind="dept" data-value="95">95</button>
+<button class="chip" data-kind="dept" data-value="IDF">IDF</button></div>
+        </div>
+        <div class="chipbox">
+          <h3>Catégories de projets finançables</h3>
+          <div class="chips" id="categories"><button class="chip" data-kind="category" data-value="Accélérer la transition écologique par l’insertion">Accélérer la transition écologique par l’insertion</button>
+<button class="chip" data-kind="category" data-value="Favoriser l’égalité et l’autonomie des femmes">Favoriser l’égalité et l’autonomie des femmes</button>
+<button class="chip" data-kind="category" data-value="Innover dans l’accompagnement et les compétences">Innover dans l’accompagnement et les compétences</button>
+<button class="chip" data-kind="category" data-value="Répondre aux besoins essentiels des territoires">Répondre aux besoins essentiels des territoires</button>
+<button class="chip" data-kind="category" data-value="Sécuriser et développer des parcours d’insertion">Sécuriser et développer des parcours d’insertion</button></div>
+        </div>
+      </div>
+
+      <div class="chiprow" style="margin-top:10px;">
+        <div class="chipbox" style="grid-column: 1 / -1;">
+          <h3>Public prioritaire</h3>
+          <div class="chips" id="publics"><button class="chip" data-kind="public" data-value="Femmes">Femmes</button>
+<button class="chip" data-kind="public" data-value="Grande précarité / sans domicile">Grande précarité / sans domicile</button>
+<button class="chip" data-kind="public" data-value="Jeunes">Jeunes</button>
+<button class="chip" data-kind="public" data-value="Personnes migrantes / allophones">Personnes migrantes / allophones</button>
+<button class="chip" data-kind="public" data-value="Sortants de détention">Sortants de détention</button></div>
+          <div style="margin-top:10px;">
+            <button id="reset" class="btn">Réinitialiser</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="bar">
+      <div id="count"></div>
+      <div>Astuce : 1–2 filtres suffisent pour cibler.</div>
+    </div>
+
+    <section class="grid" id="grid">
+      
+    <div class="card"
+         data-name="adage"
+         data-category="Sécuriser et développer des parcours d’insertion"
+         data-public="Femmes"
+         data-depts="75"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">ADAGE</div>
+        <div class="meta">Paris (75)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sécuriser et développer des parcours d’insertion</span>
+        <span class='tag soft'>Femmes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.adage-lelabo.com/qui-sommes-nous-2" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 75</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="agoie"
+         data-category="Sécuriser et développer des parcours d’insertion"
+         data-public="—"
+         data-depts="95"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">AGOIE</div>
+        <div class="meta">Val-d’Oise (95)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sécuriser et développer des parcours d’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://agoie.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 95</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="altrimenti"
+         data-category="Répondre aux besoins essentiels des territoires"
+         data-public="Grande précarité / sans domicile"
+         data-depts="75"
+         data-funding="&gt;100 k€">
+      <div class="top">
+        <div class="badge">&gt;100 k€</div>
+        <div class="title">Altrimenti</div>
+        <div class="meta">Paris (75)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Répondre aux besoins essentiels des territoires</span>
+        <span class='tag soft'>Grande précarité / sans domicile</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.altrimenti-asso.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 75</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="ars95"
+         data-category="Favoriser l’égalité et l’autonomie des femmes"
+         data-public="Femmes"
+         data-depts="95"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">ARS95</div>
+        <div class="meta">Val-d’Oise (95)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Favoriser l’égalité et l’autonomie des femmes</span>
+        <span class='tag soft'>Femmes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.ars95.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 95</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="association espaces"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="IDF"
+         data-funding="—">
+      <div class="top">
+        <div class="badge">—</div>
+        <div class="title">Association ESPACES</div>
+        <div class="meta">Île-de-France</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.association-espaces.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : IDF</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="association neptune"
+         data-category="Innover dans l’accompagnement et les compétences"
+         data-public="Sortants de détention"
+         data-depts="93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Association Neptune</div>
+        <div class="meta">Seine-Saint-Denis (93)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Innover dans l’accompagnement et les compétences</span>
+        <span class='tag soft'>Sortants de détention</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.association-neptune.com/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="ateliers sans frontières"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="IDF"
+         data-funding="—">
+      <div class="top">
+        <div class="badge">—</div>
+        <div class="title">Ateliers Sans Frontières</div>
+        <div class="meta">Île-de-France</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.groupeares.fr/62-9/nos-etablissements/ficheAnnu/ateliers-sans-frontieres.htm" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : IDF</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="au fil de l’eau"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="IDF"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Au Fil de l’Eau</div>
+        <div class="meta">Île-de-France</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://aufildeleau.eu/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : IDF</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="carton plein"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="92;93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Carton Plein</div>
+        <div class="meta">Paris / 92 / 93</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://cartonplein.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 92, 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="colombbus"
+         data-category="Innover dans l’accompagnement et les compétences"
+         data-public="Jeunes"
+         data-depts="91"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Colombbus</div>
+        <div class="meta">Paris / 91</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Innover dans l’accompagnement et les compétences</span>
+        <span class='tag soft'>Jeunes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.colombbus.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 91</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="croix-rouge insertion – appro 77"
+         data-category="Répondre aux besoins essentiels des territoires"
+         data-public="Grande précarité / sans domicile"
+         data-depts="77"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Croix-Rouge Insertion – APPRO 77</div>
+        <div class="meta">Seine-et-Marne (77) – Savigny-le-Temple</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Répondre aux besoins essentiels des territoires</span>
+        <span class='tag soft'>Grande précarité / sans domicile</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.croix-rouge.fr/croix-rouge-insertion-appro-77" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 77</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="emmaüs coup de main"
+         data-category="Sécuriser et développer des parcours d’insertion"
+         data-public="Grande précarité / sans domicile"
+         data-depts="93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Emmaüs Coup de Main</div>
+        <div class="meta">Paris / 93</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sécuriser et développer des parcours d’insertion</span>
+        <span class='tag soft'>Grande précarité / sans domicile</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.emmaus-coupdemain.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="fer et refaire (femmes actives)"
+         data-category="Favoriser l’égalité et l’autonomie des femmes"
+         data-public="Femmes"
+         data-depts="93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Fer et Refaire (Femmes Actives)</div>
+        <div class="meta">Seine-Saint-Denis (93)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Favoriser l’égalité et l’autonomie des femmes</span>
+        <span class='tag soft'>Femmes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.feretrefaire.com/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="initiative emploi"
+         data-category="Sécuriser et développer des parcours d’insertion"
+         data-public="Jeunes"
+         data-depts="92"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Initiative Emploi</div>
+        <div class="meta">Hauts-de-Seine (92)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sécuriser et développer des parcours d’insertion</span>
+        <span class='tag soft'>Jeunes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://initiative-emploi-92.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 92</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="la main fine"
+         data-category="Favoriser l’égalité et l’autonomie des femmes"
+         data-public="Femmes"
+         data-depts="93;95"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">La Main Fine</div>
+        <div class="meta">93 / 95</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Favoriser l’égalité et l’autonomie des femmes</span>
+        <span class='tag soft'>Femmes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://lamainfine.com/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93, 95</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="le paysan urbain"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="75"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Le Paysan Urbain</div>
+        <div class="meta">Paris (75)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://lepaysanurbain.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 75</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="l’îlot"
+         data-category="Sécuriser et développer des parcours d’insertion"
+         data-public="Sortants de détention"
+         data-depts="IDF"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">L’Îlot</div>
+        <div class="meta">Île-de-France</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Sécuriser et développer des parcours d’insertion</span>
+        <span class='tag soft'>Sortants de détention</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.ilot.asso.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : IDF</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="mode estime"
+         data-category="Favoriser l’égalité et l’autonomie des femmes"
+         data-public="Femmes"
+         data-depts="93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Mode Estime</div>
+        <div class="meta">Seine-Saint-Denis (93)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Favoriser l’égalité et l’autonomie des femmes</span>
+        <span class='tag soft'>Femmes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.modeestime.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="pôle iae la mie de pain"
+         data-category="Répondre aux besoins essentiels des territoires"
+         data-public="Grande précarité / sans domicile"
+         data-depts="75"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Pôle IAE La Mie de Pain</div>
+        <div class="meta">Paris (75)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Répondre aux besoins essentiels des territoires</span>
+        <span class='tag soft'>Grande précarité / sans domicile</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.miedepain.asso.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 75</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="rejoué"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="94"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Rejoué</div>
+        <div class="meta">Paris / 94</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://www.rejoue.asso.fr/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 94</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="tae – travailler et apprendre ensemble"
+         data-category="Innover dans l’accompagnement et les compétences"
+         data-public="Jeunes"
+         data-depts="93"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">TAE – Travailler et Apprendre Ensemble</div>
+        <div class="meta">Seine-Saint-Denis (93)</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Innover dans l’accompagnement et les compétences</span>
+        <span class='tag soft'>Jeunes</span>
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://ecosolidaire.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : 93</span>
+      </div>
+    </div>
+    
+    <div class="card"
+         data-name="études et chantiers île-de-france"
+         data-category="Accélérer la transition écologique par l’insertion"
+         data-public="—"
+         data-depts="IDF"
+         data-funding="30–100 k€">
+      <div class="top">
+        <div class="badge">30–100 k€</div>
+        <div class="title">Études et Chantiers Île-de-France</div>
+        <div class="meta">Île-de-France</div>
+      </div>
+      <div class="tags">
+        <span class="tag">Accélérer la transition écologique par l’insertion</span>
+        
+      </div>
+      <div class="bottom">
+        <a class="link" href="https://etudesetchantiers.org/" target="_blank" rel="noopener">Site internet ↗</a>
+        <span class="hint">Départements : IDF</span>
+      </div>
+    </div>
+    
+    </section>
+  </div>
+
+<script>
+  const q = document.getElementById('q');
+  const funding = document.getElementById('funding');
+  const reset = document.getElementById('reset');
+  const cards = Array.from(document.querySelectorAll('.card'));
+  const count = document.getElementById('count');
+
+  let activeDepts = new Set();
+  let activeCategories = new Set();
+  let activePublics = new Set();
+
+  function toggleChip(btn) {
+    const kind = btn.dataset.kind;
+    const val = btn.dataset.value;
+    btn.classList.toggle('active');
+    const set = kind === 'dept' ? activeDepts : (kind === 'category' ? activeCategories : activePublics);
+    if (btn.classList.contains('active')) set.add(val);
+    else set.delete(val);
+    apply();
+  }
+
+  document.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => toggleChip(btn));
+  });
+
+  function matchOR(value, activeSet) {
+    if (activeSet.size === 0) return true;
+    return activeSet.has(value);
+  }
+
+  function matchDept(cardValue, activeSet) {
+    if (activeSet.size === 0) return true;
+    const ds = (cardValue || '').split(';').map(s => s.trim()).filter(Boolean);
+    for (const a of activeSet) {
+      if (ds.includes(a)) return true;
+    }
+    return false;
+  }
+
+  function apply() {
+    const query = (q.value || '').trim().toLowerCase();
+    const f = funding.value;
+
+    let visible = 0;
+    cards.forEach(c => {
+      const name = c.dataset.name || '';
+      const cat = c.dataset.category || '';
+      const pub = c.dataset.public || '';
+      const depts = c.dataset.depts || '';
+      const fun = c.dataset.funding || '';
+
+      const okQ = !query || name.includes(query);
+      const okF = !f || fun === f;
+      const okD = matchDept(depts, activeDepts);
+      const okC = activeCategories.size === 0 || activeCategories.has(cat);
+      const okP = activePublics.size === 0 || activePublics.has(pub);
+
+      const ok = okQ && okF && okD && okC && okP;
+      c.style.display = ok ? 'flex' : 'none';
+      if (ok) visible += 1;
+    });
+    count.textContent = visible + " structure(s) affichée(s) sur 22";
+  }
+
+  [q, funding].forEach(el => el.addEventListener('input', apply));
+
+  reset.addEventListener('click', () => {
+    q.value = '';
+    funding.value = '';
+    activeDepts = new Set();
+    activeCategories = new Set();
+    activePublics = new Set();
+    document.querySelectorAll('.chip').forEach(btn => btn.classList.remove('active'));
+    apply();
+  });
+
+  apply();
+</script>
+
+</body>
+</html>
